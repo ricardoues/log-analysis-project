@@ -34,24 +34,24 @@ In order to run the program you need the following:
   ```
 * Create the following views:
   ```sql
-create view views_articles as
-select title, count(*) as views 
-from log  inner join articles on (log.path = concat('/article/', articles.slug))
-where status = '200 OK' 
-group by title;
+  create view views_articles as
+  select title, count(*) as views 
+  from log  inner join articles on (log.path = concat('/article/', articles.slug))
+  where status = '200 OK' 
+  group by title;
 
-create view views_authors as
-select articles.author as author_id, sum(views) as views
-from articles inner join views_articles on (articles.title = views_articles.title) 
-group by author_id;
+  create view views_authors as
+  select articles.author as author_id, sum(views) as views
+  from articles inner join views_articles on (articles.title = views_articles.title) 
+  group by author_id;
 
-create view error_percentage as
-select time::date as date, 
-round( (100.0 * 
-cast(sum(case when status = '404 NOT FOUND' then 1 else 0 end) as numeric) / 
-cast(count(status) as numeric)), 2) as error
-from log 
-group by date;
+  create view error_percentage as
+  select time::date as date, 
+  round( (100.0 * 
+  cast(sum(case when status = '404 NOT FOUND' then 1 else 0 end) as numeric) / 
+  cast(count(status) as numeric)), 2) as error
+  from log 
+  group by date;
 
   ```
 
