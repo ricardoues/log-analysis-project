@@ -25,48 +25,33 @@ In order to run the program you need the following:
 * A working installation of PostgreSQL
 * A PostgreSQL's user with name 'vagrant'
 * A database with name 'news'
-* Create and populate the schema of the database news with the following script (provided by Udacity): 
+* Download the following zip file (provided by Udacity): 
   [news database](https://d17h27t6h515a5.cloudfront.net/topher/2016/August/57b5f748_newsdata/newsdata.zip)
+* Unzip the previous downloaded file
+* Run the following command to create and populate tables on the database news: 
+  ```bash
+  psql -d news -f newsdata.sql
+  ```
 * Create the following views:
   ```sql
-  create view articles_in_log as
-  select regexp_replace(path, '/article/', '') as title from log WHERE path like '%article%';
+create view views_articles as
+select title, count(*) as views 
+from log  inner join articles on (log.path = concat('/article/', articles.slug))
+where status = '200 OK' 
+group by title;
 
-  create view articles_transformed as
-  select title, replace(regexp_replace(lower(title), '[^a-z0-9 ]', ''), ' ', '-') as title_transformed
-  from articles;
+create view views_authors as
+select articles.author as author_id, sum(views) as views
+from articles inner join views_articles on (articles.title = views_articles.title) 
+group by author_id;
 
-  create view views_articles as
-  select B.title, count(*) as views
-  from articles_in_log A, articles_transformed B
-  where
-  position(A.title in B.title_transformed) > 0
-  group by B.title;
-
-  create view views_authors as
-  select A.author as author_id, sum(B.views) as views
-  from articles A, views_articles B
-  where A.title = B.title
-  group by A.author
-  order by views desc;
-
-  create view summary_http_status_ok_code as
-  select time::date as date, status, count(*) as total
-  from log
-  where status = '200 OK'
-  group by date, status;
-
-  create view summary_http_status_error_code as
-  select time::date as date, status, count(*) as total
-  from log
-  where status = '404 NOT FOUND'
-  group by date, status;
-
-  create view error_percentage as
-  select A.date, (cast(B.total as numeric) / cast(A.total + B.total as numeric))*100.0 as error
-  from summary_http_status_ok_code A, summary_http_status_error_code B
-  where
-  A.date = B.date;
+create view error_percentage as
+select time::date as date, 
+round( (100.0 * 
+cast(sum(case when status = '404 NOT FOUND' then 1 else 0 end) as numeric) / 
+cast(count(status) as numeric)), 2) as error
+from log 
+group by date;
 
   ```
 
@@ -78,6 +63,20 @@ In order to install the program, you must run the following command in the termi
 git clone https://github.com/ricardoues/log-analysis-project.git 
 ```
 
+The above command creates the folder log-analysis-project. Within this folder there is a python file log_analysis.py, you must 
+change the following code according to the configuration of your machine:
+
+```python
+try:
+    conn = psycopg2.connect("dbname='news' user='vagrant' \
+                             host='localhost' \
+                             password='badpassword'")
+```
+
+**Note**: You must provide a password even though you can access to your PostgreSQL databases without a password. 
+ 
+
+
 ## Usage
 
 To use the program, you must change the current directory to the directory log-analysis-project and run either of the following commands: 
@@ -87,7 +86,7 @@ python3 log_analysis.py
 ```
 
 ```bash
-python3 log_analysis.py
+./log_analysis.py
 ```
 
 The text file output.txt containing the reports should have generated in the directory log-analysis-project.
@@ -103,6 +102,6 @@ This project is licensed under the GNU GPL v3.0 License - see the [gpl-3.0.md](g
 
 ## Acknowledgments
 
-* I would like to express my special thanks of Udacity's team to give me this great opportunity to learn.
+* I would like to express my special thanks to Udacity team to give me this great opportunity to learn.
 
 

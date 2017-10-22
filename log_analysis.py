@@ -56,17 +56,13 @@ try:
 except Exception as e:
     print("It is unable to connect to the database" + str(e))
 
-f = open('output.txt', 'w')  """
-                             'w' means write mode.
-                             Any existing file with
-                             the same name will be erased.
-                             """
+f = open('output.txt', 'w')
 
 
 cursor = conn.cursor()
 
-cursor.execute("select * from views_articles \
-                order by views desc limit 3;")
+cursor.execute("""select * from views_articles
+                order by views desc limit 3;""")
 
 results = cursor.fetchall()
 
@@ -74,10 +70,10 @@ number_question = 1
 write_to_file(f, results, number_question)
 
 
-cursor.execute("select A.name, B.views \
-                from authors A, views_authors B \
-                where A.id = B.author_id \
-                order by views desc;")
+cursor.execute("""select A.name, B.views
+                from authors A, views_authors B
+                where A.id = B.author_id
+                order by views desc;""")
 
 results = cursor.fetchall()
 
@@ -85,11 +81,11 @@ number_question = 2
 write_to_file(f, results, number_question)
 
 
-cursor.execute("select to_char(date, 'MON DD,YYYY') \
-                as date, \
-                round(error,2) \
-                from error_percentage \
-                where error > 1.0;")
+cursor.execute("""select to_char(date, 'MON DD,YYYY')
+                as date,
+                error
+                from error_percentage
+                where error > 1.0;""")
 
 results = cursor.fetchall()
 
@@ -99,4 +95,3 @@ write_to_file(f, results, number_question)
 
 f.close()
 conn.close()
-
